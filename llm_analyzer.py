@@ -5,10 +5,11 @@ class LLMAnalyzer:
         # We will use a pre-trained model fine-tuned for code analysis.
         # For a truly lightweight setup, a model like CodeBERT is ideal.
         # This setup assumes the model is downloaded and accessible locally.
+        # self.nlp = pipeline("text-generation", model="Salesforce/codegen-350M-mono")
         try:
             self.nlp = pipeline(
                 "text-generation",
-                model="Salesforce/codegen-350M-mono",  # Using a small, fast model for demonstration
+                model="/path/to/your/local/model", local_files_only=True",  # Using a small, fast model for demonstration
                 device=-1  # Use CPU for broader compatibility
             )
         except Exception as e:
