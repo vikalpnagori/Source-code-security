@@ -1,0 +1,5 @@
+gitpython==3.1.41
+semgrep==1.75.0  # Use a compatible, stable version
+flask==3.0.3
+transformers==4.42.3
+torch>=2.3.0
