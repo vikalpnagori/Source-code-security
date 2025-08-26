@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Scanner Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .container { max-width: 1200px; }
+        .box { margin-top: 1.5rem; }
+        .risk-critical { color: #fe3c3c; font-weight: bold; }
+        .risk-high { color: #ff9100; font-weight: bold; }
+        .risk-medium { color: #f2c94c; font-weight: bold; }
+        .risk-low { color: #27ae60; }
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <section class="hero is-info">
+        <div class="hero-body">
+            <p class="title">Source Code Vulnerability Scanner</p>
+            <p class="subtitle">Dashboard & Findings Report</p>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="box">
+            <h2 class="title is-4">Risk Summary</h2>
+            <canvas id="riskChart"></canvas>
+        </div>
+
+        <div class="box">
+            <h2 class="title is-4">Detailed Findings</h2>
+            <table class="table is-striped is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Line</th>
+                        <th>Risk Score</th>
+                        <th>Vulnerability</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for finding in findings %}
+                    <tr>
+                        <td>{{ finding.file_path }}</td>
+                        <td>{{ finding.line }}</td>
+                        <td>
+                            <span class="tag is-uppercase {{ 'is-danger' if finding.llm_risk_score.upper() == 'CRITICAL' or finding.llm_risk_score.upper() == 'HIGH' else 'is-warning' if finding.llm_risk_score.upper() == 'MEDIUM' else 'is-success' }}">
+                                {{ finding.llm_risk_score }}
+                            </span>
+                        </td>
+                        <td>
+                            <a onclick="showModal('{{ finding.semgrep_message | tojson }}', '{{ finding.llm_explanation | tojson }}', '{{ finding.remediation_plan | tojson }}', '{{ finding.code_snippet | tojson }}')">
+                                {{ finding.semgrep_message }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="details-modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Vulnerability Details</p>
+                <button class="delete" aria-label="close" onclick="closeModal()"></button>
+            </header>
+            <section class="modal-card-body">
+                <div class="content">
+                    <h4>Vulnerable Code</h4>
+                    <pre class="code-block" id="code-snippet"></pre>
+                    <h4>LLM Explanation</h4>
+                    <p id="llm-explanation"></p>
+                    <h4>Remediation Plan</h4>
+                    <p id="remediation-plan"></p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Data passed from Flask backend
+        const chartData = JSON.parse('{{ chart_data | tojson }}');
+
+        // Render the bar chart using Chart.js
+        const ctx = document.getElementById('riskChart').getContext('2d');
+        const riskChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: '# of Findings',
+                    data: chartData.data,
+                    backgroundColor: [
+                        'rgba(254, 60, 60, 0.8)',
+                        'rgba(255, 145, 0, 0.8)',
+                        'rgba(242, 201, 76, 0.8)',
+                        'rgba(39, 174, 96, 0.8)'
+                    ],
+                    borderColor: [
+                        '#fe3c3c',
+                        '#ff9100',
+                        '#f2c94c',
+                        '#27ae60'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        
+        // Modal functions
+        function showModal(message, explanation, plan, code) {
+            document.getElementById('details-modal').classList.add('is-active');
+            document.getElementById('code-snippet').textContent = JSON.parse(code);
+            document.getElementById('llm-explanation').textContent = JSON.parse(explanation);
+            document.getElementById('remediation-plan').textContent = JSON.parse(plan);
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').classList.remove('is-active');
+        }
+    </script>
+</body>
+</html>
