@@ -43,4 +43,4 @@ def api_results():
 
 if __name__ == '__main__':
     # Running in debug mode for development. In production, use a WSGI server.
-    app.run(debug=True)
+    app.run(host='0.0.0.0',debug=True)
